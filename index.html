@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>Mi Huerta UY</title>
+  <meta name="description" content="Tu guía completa de cultivo en Uruguay" />
+  <meta name="theme-color" content="#4a7c59" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Mi Huerta UY" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root {
+      --green: #4a7c59;
+      --green-light: #6aab79;
+      --green-dark: #2d5a3d;
+      --green-bg: #f0f7f1;
+      --green-muted: #ddeedd;
+      --orange: #e07b39;
+      --blue: #3a7bbf;
+      --text: #1a2e1d;
+      --text-muted: #5a7a60;
+      --card: #ffffff;
+      --border: #c8e0cc;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--green-bg); color: var(--text); min-height: 100vh; }
+    
+    /* Layout */
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
+    .header { background: var(--green-dark); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-title { font-size: 1.2rem; font-weight: 700; flex: 1; }
+    .header-icon { font-size: 1.4rem; }
+    .content { flex: 1; padding: 16px; max-width: 700px; margin: 0 auto; width: 100%; }
+    
+    /* Tabs nav */
+    .tab-bar { background: white; border-top: 1px solid var(--border); position: fixed; bottom: 0; left: 0; right: 0; display: flex; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.08); }
+    .tab-btn { flex: 1; padding: 10px 4px 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; border: none; background: none; color: var(--text-muted); font-size: 0.65rem; font-weight: 500; cursor: pointer; transition: color 0.2s; }
+    .tab-btn.active { color: var(--green); }
+    .tab-btn span { font-size: 1.4rem; }
+    .tab-page { display: none; padding-bottom: 80px; }
+    .tab-page.active { display: block; }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .card-sub { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* Crop cards */
+    .crop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .crop-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: box-shadow 0.2s, transform 0.1s; display: flex; flex-direction: column; gap: 6px; }
+    .crop-card:active { transform: scale(0.98); box-shadow: 0 2px 12px rgba(74,124,89,0.15); }
+    .crop-icon { font-size: 2.2rem; }
+    .crop-name { font-weight: 700; font-size: 0.9rem; }
+    .crop-cat { font-size: 0.65rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); letter-spacing: 0.04em; }
+    .crop-months { font-size: 0.75rem; color: var(--text-muted); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; }
+    .badge-easy { background: #d4edda; color: #155724; }
+    .badge-medium { background: #fff3cd; color: #856404; }
+    .badge-hard { background: #f8d7da; color: #721c24; }
+    .badge-hortaliza { background: #d4edda; color: #155724; }
+    .badge-fruta { background: #ffe5d0; color: #8a3800; }
+    .badge-aromatica { background: #e8d5f5; color: #4a1070; }
+
+    /* Search & filters */
+    .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 25px; font-size: 0.9rem; outline: none; background: white; }
+    .search-input:focus { border-color: var(--green); }
+    .filters { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .filters::-webkit-scrollbar { display: none; }
+    .filter-chip { padding: 5px 12px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: white; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .filter-chip.active { background: var(--green); color: white; border-color: var(--green); }
+
+    /* Buttons */
+    .btn { padding: 10px 18px; border-radius: 10px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-primary:active { background: var(--green-dark); }
+    .btn-outline { background: white; color: var(--green); border: 1.5px solid var(--green); }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-sm { padding: 7px 14px; font-size: 0.8rem; }
+    .btn-full { width: 100%; }
+    .btn-icon { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .btn-icon:active { background: var(--green-muted); }
+
+    /* Detail view */
+    .detail-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--green-bg); z-index: 200; overflow-y: auto; padding-bottom: 20px; }
+    .detail-view.open { display: block; }
+    .detail-header { background: var(--green-dark); color: white; padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+    .detail-content { padding: 16px; max-width: 700px; margin: 0 auto; }
+
+    /* Calendar bar */
+    .cal-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 10px 0; }
+    .cal-cell { aspect-ratio: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; }
+    .cal-none { background: #f0f0f0; color: #999; }
+    .cal-sow { background: #b8d4f0; color: #1a4a7a; }
+    .cal-grow { background: #b8e8c0; color: #1a5a25; }
+    .cal-harvest { background: #ffddb0; color: #7a3a00; }
+    .cal-legend { display: flex; gap: 12px; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; flex-wrap: wrap; }
+    .cal-legend-item { display: flex; align-items: center; gap: 4px; }
+    .cal-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+    /* Info row */
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); font-weight: 500; }
+    .info-val { font-weight: 600; text-align: right; max-width: 55%; }
+
+    /* Stat boxes */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+    .stat-box { background: var(--green-muted); border-radius: 10px; padding: 12px; text-align: center; }
+    .stat-num { font-size: 1.5rem; font-weight: 800; color: var(--green-dark); }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* Garden / Diary forms */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-end; }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet { background: white; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+    .form-field { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .form-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; outline: none; }
+    .form-input:focus { border-color: var(--green); }
+    .form-textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; outline: none; min-height: 80px; resize: vertical; }
+    .form-select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; outline: none; background: white; }
+
+    /* Garden entries */
+    .garden-entry { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start; }
+    .garden-entry-icon { font-size: 2rem; }
+    .garden-entry-info { flex: 1; }
+    .garden-entry-name { font-weight: 700; font-size: 0.95rem; }
+    .garden-entry-detail { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: 700; margin-top: 5px; }
+    .status-semillero { background: #cfe2ff; color: #0a3d7a; }
+    .status-crecimiento { background: #d1e7dd; color: #0a3622; }
+    .status-cosecha { background: #fff3cd; color: #664d03; }
+    .status-finalizado { background: #e2e3e5; color: #41464b; }
+
+    /* Diary entries */
+    .diary-entry { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+    .diary-date { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .diary-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .diary-text { font-size: 0.82rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .diary-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-title { font-weight: 700; font-size: 1rem; margin-bottom: 6px; color: var(--text); }
+    .empty-sub { font-size: 0.85rem; }
+
+    /* Fab */
+    .fab { position: fixed; bottom: 76px; right: 18px; width: 54px; height: 54px; border-radius: 50%; background: var(--green); color: white; font-size: 1.5rem; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(74,124,89,0.4); display: flex; align-items: center; justify-content: center; z-index: 99; transition: transform 0.15s; }
+    .fab:active { transform: scale(0.93); }
+
+    /* Section title */
+    .section-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 14px; color: var(--green-dark); }
+    .section-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: -10px; margin-bottom: 14px; }
+
+    /* Tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .tag { background: var(--green-muted); color: var(--green-dark); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+
+    /* Toast */
+    .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: var(--green-dark); color: white; padding: 10px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; z-index: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Animations */
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-in { animation: slideUp 0.25s ease-out; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <header class="header">
+    <span class="header-icon">🌱</span>
+    <span class="header-title">Mi Huerta UY</span>
+    <span id="header-extra"></span>
+  </header>
+
+  <!-- Pages -->
+  <div class="content">
+    <!-- Explorar -->
+    <div id="page-explore" class="tab-page active animate-in">
+      <div class="search-bar">
+        <input class="search-input" type="search" placeholder="🔍 Buscar cultivo..." id="search-input" oninput="filterCrops()" />
+      </div>
+      <div class="filters" id="filters">
+        <button class="filter-chip active" onclick="setFilter('all', this)">Todos</button>
+        <button class="filter-chip" onclick="setFilter('hortaliza', this)">🥦 Hortalizas</button>
+        <button class="filter-chip" onclick="setFilter('fruta', this)">🍓 Frutas</button>
+        <button class="filter-chip" onclick="setFilter('aromática', this)">🌿 Aromáticas</button>
+        <button class="filter-chip" onclick="setFilter('facil', this)">✅ Fácil</button>
+        <button class="filter-chip" onclick="setFilter('medio', this)">⚠️ Medio</button>
+        <button class="filter-chip" onclick="setFilter('dificil', this)">🔴 Difícil</button>
+      </div>
+      <p id="crop-count" class="section-sub"></p>
+      <div class="crop-grid" id="crop-grid"></div>
+    </div>
+
+    <!-- Mi Huerta -->
+    <div id="page-garden" class="tab-page">
+      <div class="section-title">🌱 Mi Huerta</div>
+      <div id="garden-list"></div>
+    </div>
+
+    <!-- Diario -->
+    <div id="page-diary" class="tab-page">
+      <div class="section-title">📓 Diario de Huerto</div>
+      <div id="diary-list"></div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('explore', this)">
+      <span>🔍</span>Explorar
+    </button>
+    <button class="tab-btn" onclick="switchTab('garden', this)">
+      <span>🌱</span>Mi Huerta
+    </button>
+    <button class="tab-btn" onclick="switchTab('diary', this)">
+      <span>📓</span>Diario
+    </button>
+  </nav>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openFab()" title="Agregar">+</button>
+
+<!-- Detail View -->
+<div class="detail-view" id="detail-view">
+  <div class="detail-header">
+    <button class="btn-icon" onclick="closeDetail()" style="color:white">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <span id="detail-title" style="font-weight:700;font-size:1.05rem;color:white;flex:1"></span>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<!-- Modal: Agregar a Mi Huerta -->
+<div class="modal-overlay" id="modal-garden" onclick="closeModalGarden(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌱 Agregar a Mi Huerta</div>
+    <input type="hidden" id="garden-crop-id" />
+    <div class="form-field">
+      <label class="form-label">Cultivo</label>
+      <input class="form-input" id="garden-crop-name" readonly style="background:#f5f5f5" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Fecha de siembra</label>
+      <input class="form-input" type="date" id="garden-date" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Cantidad (ej: 10 plantas, 2 metros)</label>
+      <input class="form-input" type="text" id="garden-quantity" placeholder="Opcional" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Ubicación (ej: Cantero 1, Maceta)</label>
+      <input class="form-input" type="text" id="garden-location" placeholder="Opcional" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Estado</label>
+      <select class="form-select" id="garden-status">
+        <option value="semillero">Semillero</option>
+        <option value="crecimiento">Crecimiento</option>
+        <option value="cosecha">Cosecha</option>
+        <option value="finalizado">Finalizado</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Notas</label>
+      <textarea class="form-textarea" id="garden-notes" placeholder="Notas opcionales..."></textarea>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveGardenEntry()">Guardar en Mi Huerta</button>
+  </div>
+</div>
+
+<!-- Modal: Nueva entrada de diario -->
+<div class="modal-overlay" id="modal-diary" onclick="closeModalDiary(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📓 Nueva Entrada</div>
+    <input type="hidden" id="diary-edit-id" value="" />
+    <div class="form-field">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="diary-date" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Título</label>
+      <input class="form-input" type="text" id="diary-title-input" placeholder="Título de la entrada" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Contenido</label>
+      <textarea class="form-textarea" id="diary-content" placeholder="¿Qué pasó hoy en la huerta?" style="min-height:100px"></textarea>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Observaciones</label>
+      <textarea class="form-textarea" id="diary-observations" placeholder="Plagas, enfermedades, clima..."></textarea>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Etiquetas (separadas por coma)</label>
+      <input class="form-input" type="text" id="diary-tags" placeholder="ej: tomate, riego, poda" />
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveDiaryEntry()">Guardar Entrada</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATOS DE CULTIVOS
+// ═══════════════════════════════════════════════════════
+const CROPS = [
+  { id:1, icon:'🍅', name:'Tomate', category:'hortaliza', difficulty:'medio', sowingStart:9, sowingEnd:11, germinationDays:10, growthDays:80, sunExposure:'6-8 horas', soilType:'Franco, rico en materia orgánica', soilPh:'6.0-6.8', waterNeeds:'alto', sowingDepthCm:'0.5-1', description:'Cultivo estrella del verano. Requiere soporte y buenas condiciones de temperatura.', commonPests:['Mosca blanca','Áfidos','Trips'], commonDiseases:['Tizón temprano','Fusarium','Virus del mosaico'], harvestMethod:'Manual, retorciendo suavemente el fruto', harvestIndicators:'Color rojo uniforme, textura firme al tacto' },
+  { id:2, icon:'🥬', name:'Lechuga', category:'hortaliza', difficulty:'fácil', sowingStart:3, sowingEnd:10, germinationDays:7, growthDays:45, sunExposure:'4-6 horas', soilType:'Franco, bien drenado', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Cultivo versátil y de rápido crecimiento. Ideal para principiantes.', commonPests:['Babosas','Áfidos'], commonDiseases:['Mildiu','Podredumbre por botrytis'], harvestMethod:'Corte de hojas externas o toda la planta', harvestIndicators:'Cabeza firme y bien formada, hojas brillantes' },
+  { id:3, icon:'🧅', name:'Cebolla', category:'hortaliza', difficulty:'medio', sowingStart:3, sowingEnd:7, germinationDays:14, growthDays:120, sunExposure:'6-8 horas', soilType:'Franco-arenoso, bien drenado', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'1-2', description:'Imprescindible en toda huerta. Requiere paciencia pero la cosecha vale la pena.', commonPests:['Trips de la cebolla','Mosca de la cebolla'], commonDiseases:['Mildiu','Podredumbre del cuello'], harvestMethod:'Arrancar cuando las hojas se doblan', harvestIndicators:'Hojas doblegadas hacia el suelo, bulbo firme' },
+  { id:4, icon:'🥕', name:'Zanahoria', category:'hortaliza', difficulty:'fácil', sowingStart:3, sowingEnd:9, germinationDays:14, growthDays:90, sunExposure:'6-8 horas', soilType:'Franco-arenoso, profundo, sin piedras', soilPh:'6.0-6.8', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Cultivo de raíz que requiere suelo suelto y profundo. Muy nutritiva.', commonPests:['Mosca de la zanahoria','Áfidos'], commonDiseases:['Alternaria','Oidio'], harvestMethod:'Tirar suavemente de la parte aérea', harvestIndicators:'Diámetro de 2-3 cm, color naranja intenso' },
+  { id:5, icon:'🌿', name:'Albahaca', category:'aromática', difficulty:'fácil', sowingStart:10, sowingEnd:12, germinationDays:7, growthDays:60, sunExposure:'6-8 horas', soilType:'Franco, rico en materia orgánica', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Aromática de múltiples usos culinarios. Compañera perfecta del tomate.', commonPests:['Áfidos','Trips'], commonDiseases:['Fusarium','Oidio'], harvestMethod:'Corte de ramas superiores para promover la ramificación', harvestIndicators:'Antes de florecer, hojas tiernas y aromáticas' },
+  { id:6, icon:'🫛', name:'Poroto', category:'hortaliza', difficulty:'fácil', sowingStart:10, sowingEnd:12, germinationDays:7, growthDays:65, sunExposure:'6-8 horas', soilType:'Franco, bien drenado', soilPh:'6.0-7.5', waterNeeds:'moderado', sowingDepthCm:'3-4', description:'Leguminosa que mejora el suelo. Excelente fuente de proteínas.', commonPests:['Mosca blanca','Áfidos'], commonDiseases:['Antracnosis','Mosaico del poroto'], harvestMethod:'Manual, cosecha en vaina verde o grano seco', harvestIndicators:'Vainas llenas pero tiernas, color verde brillante' },
+  { id:7, icon:'🌽', name:'Choclo', category:'hortaliza', difficulty:'medio', sowingStart:10, sowingEnd:12, germinationDays:10, growthDays:85, sunExposure:'8 horas', soilType:'Franco, rico, bien drenado', soilPh:'5.8-7.0', waterNeeds:'alto', sowingDepthCm:'4-5', description:'Cultivo de verano que requiere espacio. Sembrar en grupos para polinización.', commonPests:['Gusano cogollero','Barrenador del tallo'], commonDiseases:['Roya del maíz','Tizón foliar'], harvestMethod:'Arrancar la espiga girando y jalando hacia abajo', harvestIndicators:'Barba café-negra, granos llenos y jugosos' },
+  { id:8, icon:'🥒', name:'Pepino', category:'hortaliza', difficulty:'fácil', sowingStart:10, sowingEnd:12, germinationDays:7, growthDays:55, sunExposure:'6-8 horas', soilType:'Franco, rico en materia orgánica', soilPh:'6.0-7.0', waterNeeds:'alto', sowingDepthCm:'1-2', description:'Fruto de verano muy productivo. Requiere soporte para las guías.', commonPests:['Mosca blanca','Áfidos','Ácaros'], commonDiseases:['Oidio','Mildiu'], harvestMethod:'Corte con tijera, no jalar para no dañar la planta', harvestIndicators:'Fruto firme, color verde uniforme, 15-20 cm' },
+  { id:9, icon:'🫑', name:'Pimiento', category:'hortaliza', difficulty:'medio', sowingStart:9, sowingEnd:11, germinationDays:14, growthDays:90, sunExposure:'6-8 horas', soilType:'Franco, rico en materia orgánica', soilPh:'6.0-6.8', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Cultivo versátil que puede cosecharse verde o maduro. Muy nutritivo.', commonPests:['Mosca blanca','Áfidos'], commonDiseases:['Virus del mosaico','Botrytis'], harvestMethod:'Corte con tijera dejando 1 cm de pedúnculo', harvestIndicators:'Tamaño completo, piel brillante, firmeza al tacto' },
+  { id:10, icon:'🎃', name:'Zapallo', category:'hortaliza', difficulty:'fácil', sowingStart:10, sowingEnd:12, germinationDays:7, growthDays:100, sunExposure:'6-8 horas', soilType:'Franco-arcilloso, rico', soilPh:'6.0-7.5', waterNeeds:'moderado', sowingDepthCm:'2-3', description:'Planta voluminosa que necesita espacio. Muy productiva y nutritiva.', commonPests:['Mosca de la calabaza','Ácaros'], commonDiseases:['Oidio','Mildiu'], harvestMethod:'Corte con cuchillo dejando 5 cm de tallo', harvestIndicators:'Cáscara dura, pedúnculo seco, golpe sordo' },
+  { id:11, icon:'🍓', name:'Frutilla', category:'fruta', difficulty:'medio', sowingStart:3, sowingEnd:5, germinationDays:21, growthDays:150, sunExposure:'6-8 horas', soilType:'Franco-arenoso, rico, bien drenado', soilPh:'5.5-6.5', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Fruta deliciosa que produce durante varios meses. Requiere buena preparación del suelo.', commonPests:['Ácaros','Babosas','Trips'], commonDiseases:['Botrytis','Oidio','Antracnosis'], harvestMethod:'Manual, cogiendo el fruto con el pedúnculo', harvestIndicators:'Color rojo uniforme, aroma intenso, fruto firme' },
+  { id:12, icon:'🫐', name:'Arándano', category:'fruta', difficulty:'difícil', sowingStart:6, sowingEnd:8, germinationDays:30, growthDays:365, sunExposure:'6-8 horas', soilType:'Ácido, rico en materia orgánica', soilPh:'4.5-5.5', waterNeeds:'moderado', sowingDepthCm:'1', description:'Arbusto frutal de largo plazo con excelentes propiedades antioxidantes.', commonPests:['Pájaros','Mosca de la fruta'], commonDiseases:['Momificación','Podredumbre gris'], harvestMethod:'Manual, recoger cuando los frutos caigan solos', harvestIndicators:'Color azul uniforme, fácil desprendimiento del pedúnculo' },
+  { id:13, icon:'🌿', name:'Perejil', category:'aromática', difficulty:'fácil', sowingStart:3, sowingEnd:10, germinationDays:21, growthDays:70, sunExposure:'4-6 horas', soilType:'Franco, húmedo', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Aromática de uso culinario y medicinal. Muy resistente y fácil de cultivar.', commonPests:['Áfidos','Gusano del perejil'], commonDiseases:['Septoria','Mildiu'], harvestMethod:'Corte de tallos externos, dejando el centro', harvestIndicators:'Tallos verdes y tiernos, antes de que florezca' },
+  { id:14, icon:'🌱', name:'Rúcula', category:'hortaliza', difficulty:'fácil', sowingStart:3, sowingEnd:10, germinationDays:5, growthDays:35, sunExposure:'4-6 horas', soilType:'Franco, bien drenado', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Hoja de ensalada con sabor picante. Cultivo muy rápido y fácil.', commonPests:['Pulguilla','Áfidos'], commonDiseases:['Mildiu'], harvestMethod:'Corte de hojas externas o toda la planta', harvestIndicators:'Hojas tiernas de 7-10 cm, antes de florecer' },
+  { id:15, icon:'🧄', name:'Ajo', category:'hortaliza', difficulty:'fácil', sowingStart:4, sowingEnd:6, germinationDays:21, growthDays:180, sunExposure:'6-8 horas', soilType:'Franco-arenoso, bien drenado', soilPh:'6.0-7.0', waterNeeds:'bajo', sowingDepthCm:'5', description:'Cultivo esencial en la cocina. Se planta por dientes y requiere paciencia.', commonPests:['Mosca de la cebolla','Trips'], commonDiseases:['Roya del ajo','Podredumbre blanca'], harvestMethod:'Arrancar cuando las hojas se doblan', harvestIndicators:'Hojas inferiores amarillas y doblegadas, bulbo firme' },
+  { id:16, icon:'🌻', name:'Girasol', category:'fruta', difficulty:'fácil', sowingStart:10, sowingEnd:12, germinationDays:7, growthDays:90, sunExposure:'8 horas', soilType:'Franco, bien drenado', soilPh:'6.0-7.5', waterNeeds:'bajo', sowingDepthCm:'2-3', description:'Planta decorativa y productiva. Sus semillas son nutritivas y atraen aves.', commonPests:['Pájaros','Áfidos'], commonDiseases:['Oidio','Roya'], harvestMethod:'Cortar la cabeza cuando los pétalos caigan', harvestIndicators:'Pétalos caídos, semillas duras, cabeza inclinada' },
+  { id:17, icon:'🫚', name:'Espinaca', category:'hortaliza', difficulty:'fácil', sowingStart:3, sowingEnd:9, germinationDays:10, growthDays:50, sunExposure:'4-6 horas', soilType:'Franco, rico en nitrógeno', soilPh:'6.5-7.5', waterNeeds:'moderado', sowingDepthCm:'1', description:'Hoja nutritiva que prefiere el clima fresco. Excelente para primavera y otoño.', commonPests:['Minador de la hoja','Áfidos'], commonDiseases:['Mildiu','Viruela'], harvestMethod:'Corte de hojas externas dejando las centrales', harvestIndicators:'Hojas de 8-10 cm, verde intenso, antes de florecer' },
+  { id:18, icon:'🌿', name:'Menta', category:'aromática', difficulty:'fácil', sowingStart:9, sowingEnd:3, germinationDays:14, growthDays:60, sunExposure:'4-6 horas', soilType:'Franco, húmedo', soilPh:'6.0-7.0', waterNeeds:'alto', sowingDepthCm:'0.5', description:'Aromática invasiva, mejor en maceta. Múltiples usos culinarios y medicinales.', commonPests:['Áfidos','Arañitas'], commonDiseases:['Roya de la menta'], harvestMethod:'Corte de ramas antes de la floración', harvestIndicators:'Brotes nuevos y tiernos, aroma intenso' },
+  { id:19, icon:'🌿', name:'Romero', category:'aromática', difficulty:'fácil', sowingStart:9, sowingEnd:11, germinationDays:21, growthDays:180, sunExposure:'6-8 horas', soilType:'Arenoso, bien drenado', soilPh:'6.0-8.0', waterNeeds:'bajo', sowingDepthCm:'0.5', description:'Aromática perenne muy resistente. Poco agua y mucho sol.', commonPests:['Ácaros','Cochinillas'], commonDiseases:['Oidio'], harvestMethod:'Corte de ramitas tiernas con tijera', harvestIndicators:'Brotes nuevos verde brillante, aroma intenso' },
+  { id:20, icon:'🌿', name:'Orégano', category:'aromática', difficulty:'fácil', sowingStart:9, sowingEnd:11, germinationDays:14, growthDays:90, sunExposure:'6-8 horas', soilType:'Bien drenado, no muy fértil', soilPh:'6.0-8.0', waterNeeds:'bajo', sowingDepthCm:'0.5', description:'Aromática perenne muy usada en cocina. Resiste bien la sequía.', commonPests:['Áfidos','Arañitas'], commonDiseases:['Botrytis'], harvestMethod:'Corte de ramas antes de florecer', harvestIndicators:'Hojas oscuras y aromáticas, antes de abrir flores' },
+  { id:21, icon:'🍋', name:'Limón', category:'fruta', difficulty:'difícil', sowingStart:9, sowingEnd:11, germinationDays:30, growthDays:730, sunExposure:'8 horas', soilType:'Franco, bien drenado', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'1', description:'Árbol frutal cítrico. Requiere clima templado-cálido y pocos años para producir.', commonPests:['Cochinillas','Mosca de la fruta','Minador'], commonDiseases:['Gomosis','Melanose'], harvestMethod:'Corte con tijera de poda dejando pedúnculo', harvestIndicators:'Color amarillo uniforme, cáscara suave al presionar' },
+  { id:22, icon:'🍆', name:'Berenjena', category:'hortaliza', difficulty:'medio', sowingStart:9, sowingEnd:11, germinationDays:14, growthDays:90, sunExposure:'6-8 horas', soilType:'Franco, rico en materia orgánica', soilPh:'5.5-7.0', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Cultivo de verano con altos requerimientos de temperatura. Muy productiva.', commonPests:['Araña roja','Mosca blanca'], commonDiseases:['Verticilium','Botritis'], harvestMethod:'Corte con tijera o cuchillo afilado', harvestIndicators:'Piel brillante, presión suave devuelve forma' },
+  { id:23, icon:'🥦', name:'Brócoli', category:'hortaliza', difficulty:'medio', sowingStart:3, sowingEnd:7, germinationDays:7, growthDays:90, sunExposure:'6 horas', soilType:'Franco, rico en materia orgánica', soilPh:'6.0-7.0', waterNeeds:'moderado', sowingDepthCm:'0.5', description:'Cultivo de clima fresco muy nutritivo. Ideal para otoño-invierno.', commonPests:['Oruga de la col','Pulgón'], commonDiseases:['Mildiu','Hernia de la col'], harvestMethod:'Corte del tallo principal antes de que abran flores', harvestIndicators:'Cabeza compacta, florets cerrados, color verde intenso' },
+  { id:24, icon:'🥬', name:'Acelga', category:'hortaliza', difficulty:'fácil', sowingStart:3, sowingEnd:10, germinationDays:7, growthDays:60, sunExposure:'4-6 horas', soilType:'Franco, fértil', soilPh:'6.0-7.5', waterNeeds:'moderado', sowingDepthCm:'1-2', description:'Cultivo muy resistente y productivo. Hojas durante todo el año.', commonPests:['Mosca minadora','Áfidos'], commonDiseases:['Cercospora','Oidio'], harvestMethod:'Corte de hojas externas de abajo hacia arriba', harvestIndicators:'Hojas grandes y tiernas, pecíolo firme' },
+  { id:25, icon:'🫛', name:'Arvejas', category:'hortaliza', difficulty:'fácil', sowingStart:4, sowingEnd:8, germinationDays:10, growthDays:75, sunExposure:'6 horas', soilType:'Franco, bien drenado', soilPh:'6.0-7.5', waterNeeds:'moderado', sowingDepthCm:'3-4', description:'Leguminosa que enriquece el suelo. Ideal para la estación fresca.', commonPests:['Gorgojo','Araña roja'], commonDiseases:['Oidio','Antracnosis'], harvestMethod:'Manual, cosecha regular para estimular producción', harvestIndicators:'Vaina llena, color verde brillante, granos formados' },
+];
+
+const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MONTHS_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ═══════════════════════════════════════════════════════
+// STORAGE LOCAL (en el teléfono)
+// ═══════════════════════════════════════════════════════
+function loadGarden() {
+  try { return JSON.parse(localStorage.getItem('mh_garden') || '[]'); } catch { return []; }
+}
+function saveGarden(data) {
+  localStorage.setItem('mh_garden', JSON.stringify(data));
+}
+function loadDiary() {
+  try { return JSON.parse(localStorage.getItem('mh_diary') || '[]'); } catch { return []; }
+}
+function saveDiary(data) {
+  localStorage.setItem('mh_diary', JSON.stringify(data));
+}
+
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+let currentFilter = 'all';
+let currentSearch = '';
+let currentTab = 'explore';
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  btn.classList.add('active');
+  currentTab = tab;
+  document.getElementById('fab').style.display = (tab === 'garden' || tab === 'diary') ? 'flex' : 'none';
+  if (tab === 'garden') renderGarden();
+  if (tab === 'diary') renderDiary();
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPLORAR CULTIVOS
+// ═══════════════════════════════════════════════════════
+function setFilter(val, btn) {
+  currentFilter = val;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  filterCrops();
+}
+
+function filterCrops() {
+  currentSearch = document.getElementById('search-input').value.toLowerCase();
+  const cats = ['hortaliza','fruta','aromática'];
+  const diffs = ['fácil','medio','difícil'];
+
+  const filtered = CROPS.filter(c => {
+    if (currentSearch && !c.name.toLowerCase().includes(currentSearch) && !c.description.toLowerCase().includes(currentSearch)) return false;
+    if (currentFilter === 'hortaliza' || currentFilter === 'fruta' || currentFilter === 'aromática') {
+      if (c.category !== currentFilter) return false;
+    }
+    if (currentFilter === 'facil' && c.difficulty !== 'fácil') return false;
+    if (currentFilter === 'medio' && c.difficulty !== 'medio') return false;
+    if (currentFilter === 'dificil' && c.difficulty !== 'difícil') return false;
+    return true;
+  });
+
+  document.getElementById('crop-count').textContent = `Mostrando ${filtered.length} de ${CROPS.length} cultivos`;
+  const grid = document.getElementById('crop-grid');
+  grid.innerHTML = filtered.map(c => `
+    <div class="crop-card" onclick="openDetail(${c.id})">
+      <div class="crop-icon">${c.icon}</div>
+      <div class="crop-cat">${c.category}</div>
+      <div class="crop-name">${c.name}</div>
+      <div class="crop-months">🗓 Mes ${c.sowingStart}-${c.sowingEnd}</div>
+      <div>
+        <span class="badge ${diffBadge(c.difficulty)}">${c.difficulty}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function diffBadge(d) {
+  if (d === 'fácil') return 'badge-easy';
+  if (d === 'medio') return 'badge-medium';
+  return 'badge-hard';
+}
+
+// ═══════════════════════════════════════════════════════
+// DETALLE DE CULTIVO
+// ═══════════════════════════════════════════════════════
+function openDetail(id) {
+  const c = CROPS.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('detail-title').textContent = c.icon + ' ' + c.name;
+  document.getElementById('detail-content').innerHTML = buildDetailHTML(c);
+  document.getElementById('detail-view').classList.add('open');
+  document.getElementById('detail-view').scrollTop = 0;
+}
+
+function closeDetail() {
+  document.getElementById('detail-view').classList.remove('open');
+}
+
+function buildCalendar(c) {
+  return MONTHS_SHORT.map((m, i) => {
+    const month = i + 1;
+    let cls = 'cal-none';
+    let label = m;
+    // Siembra
+    const s = c.sowingStart, e = c.sowingEnd;
+    let isSow = s <= e ? (month >= s && month <= e) : (month >= s || month <= e);
+    // Cosecha aproximada
+    const totalMonths = Math.ceil((c.germinationDays + c.growthDays) / 30);
+    let harvestMonths = [];
+    for (let offset = 0; offset <= 2; offset++) {
+      let hm = ((s - 1 + totalMonths + offset) % 12) + 1;
+      harvestMonths.push(hm);
+    }
+    let isHarvest = harvestMonths.includes(month);
+    // Crecimiento (entre siembra y cosecha)
+    let isGrow = false;
+    for (let offset = 1; offset < totalMonths; offset++) {
+      let gm = ((s - 1 + offset) % 12) + 1;
+      if (month === gm) { isGrow = true; break; }
+    }
+    if (isHarvest) cls = 'cal-harvest';
+    else if (isSow) cls = 'cal-sow';
+    else if (isGrow) cls = 'cal-grow';
+    return `<div class="cal-cell ${cls}" title="${MONTHS_LONG[i]}">${m}</div>`;
+  }).join('');
+}
+
+function buildDetailHTML(c) {
+  const garden = loadGarden();
+  const alreadyPlanted = garden.some(g => g.cropId === c.id && g.status !== 'finalizado');
+  return `
+    <div style="text-align:center;padding:20px 0 10px">
+      <div style="font-size:4rem">${c.icon}</div>
+      <div style="font-size:1.4rem;font-weight:800;margin-top:6px">${c.name}</div>
+      <div style="margin-top:4px">
+        <span class="badge badge-${c.category === 'hortaliza' ? 'hortaliza' : c.category === 'fruta' ? 'fruta' : 'aromatica'}">${c.category}</span>
+        <span class="badge ${diffBadge(c.difficulty)}" style="margin-left:6px">${c.difficulty}</span>
+      </div>
+      <p style="margin-top:10px;color:var(--text-muted);font-size:0.85rem;padding:0 10px">${c.description}</p>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num">${c.germinationDays}</div><div class="stat-label">días germinación</div></div>
+      <div class="stat-box"><div class="stat-num">${c.growthDays}</div><div class="stat-label">días crecimiento</div></div>
+      <div class="stat-box"><div class="stat-num">${c.germinationDays + c.growthDays}</div><div class="stat-label">días total</div></div>
+      <div class="stat-box"><div class="stat-num">Mes ${c.sowingStart}-${c.sowingEnd}</div><div class="stat-label">siembra</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 Calendario</div>
+      <div class="cal-grid" style="margin-top:10px">${buildCalendar(c)}</div>
+      <div class="cal-legend">
+        <div class="cal-legend-item"><div class="cal-dot" style="background:#b8d4f0"></div>Siembra</div>
+        <div class="cal-legend-item"><div class="cal-dot" style="background:#b8e8c0"></div>Crecimiento</div>
+        <div class="cal-legend-item"><div class="cal-dot" style="background:#ffddb0"></div>Cosecha</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌍 Requerimientos</div>
+      <div class="info-row"><span class="info-label">Sol</span><span class="info-val">${c.sunExposure}</span></div>
+      <div class="info-row"><span class="info-label">Tipo de suelo</span><span class="info-val">${c.soilType}</span></div>
+      <div class="info-row"><span class="info-label">pH del suelo</span><span class="info-val">${c.soilPh}</span></div>
+      <div class="info-row"><span class="info-label">Agua</span><span class="info-val">${c.waterNeeds}</span></div>
+      <div class="info-row"><span class="info-label">Profundidad siembra</span><span class="info-val">${c.sowingDepthCm} cm</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🐛 Plagas comunes</div>
+      ${c.commonPests.map(p => `<div style="padding:5px 0;font-size:0.85rem">• ${p}</div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🍂 Enfermedades comunes</div>
+      ${c.commonDiseases.map(d => `<div style="padding:5px 0;font-size:0.85rem">• ${d}</div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">✂️ Cosecha</div>
+      <div class="info-row"><span class="info-label">Método</span><span class="info-val">${c.harvestMethod}</span></div>
+      <div class="info-row"><span class="info-label">Indicadores</span><span class="info-val">${c.harvestIndicators}</span></div>
+    </div>
+
+    <button class="btn ${alreadyPlanted ? 'btn-outline' : 'btn-primary'} btn-full" onclick="openGardenModal(${c.id})" style="margin-top:8px;margin-bottom:20px">
+      🌱 ${alreadyPlanted ? 'Ya está en Mi Huerta (agregar otra)' : 'Agregar a Mi Huerta'}
+    </button>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// MI HUERTA
+// ═══════════════════════════════════════════════════════
+function openGardenModal(cropId) {
+  const c = CROPS.find(x => x.id === cropId);
+  if (!c) return;
+  document.getElementById('garden-crop-id').value = cropId;
+  document.getElementById('garden-crop-name').value = c.icon + ' ' + c.name;
+  document.getElementById('garden-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('garden-quantity').value = '';
+  document.getElementById('garden-location').value = '';
+  document.getElementById('garden-notes').value = '';
+  document.getElementById('garden-status').value = 'semillero';
+  document.getElementById('modal-garden').classList.add('open');
+}
+
+function closeModalGarden(e) {
+  if (!e || e.target === document.getElementById('modal-garden')) {
+    document.getElementById('modal-garden').classList.remove('open');
+  }
+}
+
+function saveGardenEntry() {
+  const cropId = parseInt(document.getElementById('garden-crop-id').value);
+  const date = document.getElementById('garden-date').value;
+  if (!date) { showToast('Por favor ingresá una fecha'); return; }
+  const garden = loadGarden();
+  const entry = {
+    id: Date.now(),
+    cropId,
+    sowingDate: date,
+    quantity: document.getElementById('garden-quantity').value,
+    location: document.getElementById('garden-location').value,
+    notes: document.getElementById('garden-notes').value,
+    status: document.getElementById('garden-status').value,
+    createdAt: new Date().toISOString(),
+  };
+  garden.push(entry);
+  saveGarden(garden);
+  closeModalGarden();
+  showToast('✅ Guardado en Mi Huerta');
+}
+
+function updateGardenStatus(id, status) {
+  const garden = loadGarden();
+  const entry = garden.find(g => g.id === id);
+  if (entry) { entry.status = status; saveGarden(garden); renderGarden(); }
+}
+
+function deleteGardenEntry(id) {
+  if (!confirm('¿Eliminar este cultivo de tu huerta?')) return;
+  const garden = loadGarden().filter(g => g.id !== id);
+  saveGarden(garden);
+  renderGarden();
+  showToast('Eliminado');
+}
+
+function renderGarden() {
+  const garden = loadGarden();
+  const list = document.getElementById('garden-list');
+  if (garden.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Tu huerta está vacía</div><div class="empty-sub">Explorá el catálogo y agregá tus primeros cultivos</div></div>`;
+    return;
+  }
+  // Agrupar por estado
+  const order = ['semillero','crecimiento','cosecha','finalizado'];
+  const sorted = [...garden].sort((a,b) => order.indexOf(a.status) - order.indexOf(b.status));
+  list.innerHTML = sorted.map(g => {
+    const crop = CROPS.find(c => c.id === g.cropId);
+    const icon = crop ? crop.icon : '🌿';
+    const name = crop ? crop.name : 'Cultivo';
+    const date = new Date(g.sowingDate).toLocaleDateString('es-UY', {day:'numeric',month:'long',year:'numeric'});
+    return `
+      <div class="garden-entry">
+        <div class="garden-entry-icon">${icon}</div>
+        <div class="garden-entry-info">
+          <div class="garden-entry-name">${name}</div>
+          <div class="garden-entry-detail">🗓 Sembrado: ${date}</div>
+          ${g.location ? `<div class="garden-entry-detail">📍 ${g.location}</div>` : ''}
+          ${g.quantity ? `<div class="garden-entry-detail">📦 ${g.quantity}</div>` : ''}
+          ${g.notes ? `<div class="garden-entry-detail">📝 ${g.notes}</div>` : ''}
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="status-badge status-${g.status}">${g.status}</span>
+            <select style="font-size:0.7rem;padding:2px 6px;border-radius:8px;border:1px solid var(--border);background:white" onchange="updateGardenStatus(${g.id}, this.value)">
+              <option value="semillero" ${g.status==='semillero'?'selected':''}>Semillero</option>
+              <option value="crecimiento" ${g.status==='crecimiento'?'selected':''}>Crecimiento</option>
+              <option value="cosecha" ${g.status==='cosecha'?'selected':''}>Cosecha</option>
+              <option value="finalizado" ${g.status==='finalizado'?'selected':''}>Finalizado</option>
+            </select>
+            <button class="btn btn-sm btn-danger" onclick="deleteGardenEntry(${g.id})" style="padding:3px 8px;font-size:0.65rem">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// DIARIO
+// ═══════════════════════════════════════════════════════
+function openDiaryModal(editId) {
+  document.getElementById('diary-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('diary-title-input').value = '';
+  document.getElementById('diary-content').value = '';
+  document.getElementById('diary-observations').value = '';
+  document.getElementById('diary-tags').value = '';
+  document.getElementById('diary-edit-id').value = editId || '';
+  if (editId) {
+    const entry = loadDiary().find(d => d.id === editId);
+    if (entry) {
+      document.getElementById('diary-date').value = entry.date;
+      document.getElementById('diary-title-input').value = entry.title || '';
+      document.getElementById('diary-content').value = entry.content || '';
+      document.getElementById('diary-observations').value = entry.observations || '';
+      document.getElementById('diary-tags').value = (entry.tags || []).join(', ');
+    }
+  }
+  document.getElementById('modal-diary').classList.add('open');
+}
+
+function closeModalDiary(e) {
+  if (!e || e.target === document.getElementById('modal-diary')) {
+    document.getElementById('modal-diary').classList.remove('open');
+  }
+}
+
+function saveDiaryEntry() {
+  const title = document.getElementById('diary-title-input').value.trim();
+  const date = document.getElementById('diary-date').value;
+  if (!date) { showToast('Por favor ingresá una fecha'); return; }
+  const diary = loadDiary();
+  const editId = document.getElementById('diary-edit-id').value;
+  const tags = document.getElementById('diary-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  if (editId) {
+    const idx = diary.findIndex(d => d.id == editId);
+    if (idx >= 0) {
+      diary[idx] = { ...diary[idx], date, title, content: document.getElementById('diary-content').value, observations: document.getElementById('diary-observations').value, tags };
+    }
+  } else {
+    diary.unshift({ id: Date.now(), date, title, content: document.getElementById('diary-content').value, observations: document.getElementById('diary-observations').value, tags, createdAt: new Date().toISOString() });
+  }
+  saveDiary(diary);
+  closeModalDiary();
+  renderDiary();
+  showToast('✅ Entrada guardada');
+}
+
+function deleteDiaryEntry(id) {
+  if (!confirm('¿Eliminar esta entrada del diario?')) return;
+  saveDiary(loadDiary().filter(d => d.id !== id));
+  renderDiary();
+  showToast('Eliminado');
+}
+
+function renderDiary() {
+  const diary = loadDiary();
+  const list = document.getElementById('diary-list');
+  if (diary.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📓</div><div class="empty-title">Tu diario está vacío</div><div class="empty-sub">Registrá tus observaciones y el progreso de tu huerta</div></div>`;
+    return;
+  }
+  list.innerHTML = diary.map(d => {
+    const date = new Date(d.date).toLocaleDateString('es-UY', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    return `
+      <div class="diary-entry">
+        <div class="diary-date">📅 ${date}</div>
+        ${d.title ? `<div class="diary-title">${d.title}</div>` : ''}
+        ${d.content ? `<div class="diary-text">${d.content}</div>` : ''}
+        ${d.observations ? `<div class="diary-text" style="margin-top:4px;color:#7a5a00">🔍 ${d.observations}</div>` : ''}
+        ${d.tags && d.tags.length > 0 ? `<div class="tags">${d.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : ''}
+        <div class="diary-actions">
+          <button class="btn btn-sm btn-outline" onclick="openDiaryModal(${d.id})" style="margin-right:6px">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteDiaryEntry(${d.id})">Eliminar</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// FAB
+// ═══════════════════════════════════════════════════════
+function openFab() {
+  if (currentTab === 'garden') {
+    // Mostrar selector de cultivo para Mi Huerta
+    showCropPicker();
+  } else if (currentTab === 'diary') {
+    openDiaryModal();
+  }
+}
+
+function showCropPicker() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'crop-picker';
+  overlay.innerHTML = `
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-height:80vh">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Seleccionar Cultivo</div>
+      <input class="form-input" placeholder="Buscar..." oninput="filterPicker(this.value)" style="margin-bottom:12px" />
+      <div id="picker-list" style="overflow-y:auto;max-height:50vh">
+        ${CROPS.map(c => `
+          <div style="padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:8px" 
+               onmousedown="selectCrop(${c.id})" ontouchstart="selectCrop(${c.id})">
+            <span style="font-size:1.6rem">${c.icon}</span>
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">${c.name}</div>
+              <div style="font-size:0.72rem;color:var(--text-muted)">${c.category}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+function filterPicker(val) {
+  const items = document.querySelectorAll('#picker-list > div');
+  items.forEach(item => {
+    const txt = item.textContent.toLowerCase();
+    item.style.display = txt.includes(val.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function selectCrop(id) {
+  const picker = document.getElementById('crop-picker');
+  if (picker) picker.remove();
+  openGardenModal(id);
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════
+// PWA - Service Worker
+// ═══════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+filterCrops();
+document.getElementById('fab').style.display = 'none';
+</script>
+</body>
+</html>
